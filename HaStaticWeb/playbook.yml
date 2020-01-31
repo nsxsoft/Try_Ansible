@@ -1,0 +1,52 @@
+---
+- name: Install web servers
+  gather_facts: no
+  hosts: web-*
+  become: true
+  tasks:
+    - name: Install Apache
+      apt:
+        name: apache2
+        state: latest
+        update_cache: yes
+
+    - name: Give writable mode to http folder
+      file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+    - name: Remove default web page
+      file:
+        path: /var/www/html/index.html
+        state: absent
+
+    - name: Upload file
+      copy:
+        src: app/
+        dest: /var/www/html/
+
+    - name: Check apache service is online
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+- name: Install HAproxy server
+  gather_facts: no
+  hosts: haproxy
+  become: true
+  tasks:
+    - name: Install HAproxy
+      apt:
+        name: haproxy
+        state: latest
+        update_cache: yes
+
+    - name: Deploy HAproxy config
+      template:
+        src: "haproxy.cfg.j2"
+        dest: "/etc/haproxy/haproxy.cfg"
+
+    - name: Run HAproxy
+      shell: /usr/sbin/haproxy -d -f /etc/haproxy/haproxy.cfg >/dev/null 2>&1 &

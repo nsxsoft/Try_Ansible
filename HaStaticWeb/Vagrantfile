@@ -1,0 +1,56 @@
+# ####################################################################
+# ################### CONFIGURATION VARIABLES ########################
+# ####################################################################
+IMAGE_NAME = "ubuntu/bionic64"      # Image to use
+MEM = 1024                          # Amount of RAM
+CPU = 1                             # Number of processors
+
+WEB_1_IP = "10.0.42.11"
+WEB_2_IP = "10.0.42.12"
+PORT = "80"
+HA_IP = "10.0.42.10"
+
+
+Vagrant.configure("2") do |config|
+  # RAM and CPU config
+  config.vm.provider "virtualbox" do |v|
+    v.memory = MEM
+    v.cpus = CPU
+  end
+
+  # web-1 config
+  config.vm.define "web-1" do |web|
+    web.vm.box = IMAGE_NAME
+    web.vm.hostname = "web-1"
+    web.vm.network "private_network", ip: "#{WEB_1_IP}"
+    web.vm.provision "ansible" do |ansible|
+    ansible.playbook = "playbook.yml"
+    end
+  end
+
+  # web-2 config
+  config.vm.define "web-2" do |web|
+    web.vm.box = IMAGE_NAME
+    web.vm.hostname = "web-2"
+    web.vm.network "private_network", ip: "#{WEB_2_IP}"
+    web.vm.provision "ansible" do |ansible|
+    ansible.playbook = "playbook.yml"
+    end
+  end
+
+  # haproxy config
+  config.vm.define "haproxy" do |ha|
+    #OS and hostname
+    ha.vm.box = IMAGE_NAME
+    ha.vm.hostname = "haproxy"
+    ha.vm.network "private_network", ip: "#{HA_IP}"
+    ha.vm.provision "ansible" do |ansible|
+      ansible.playbook = "playbook.yml"
+      ansible.extra_vars = {
+        WEB_1_IP: "#{WEB_1_IP}",
+        WEB_2_IP: "#{WEB_2_IP}",
+        PORT: "#{PORT}"
+      }
+    end
+  end
+end
