@@ -1,0 +1,7 @@
+version: "3.7"
+services:
+  nginx:
+    image: "nginx:latest"
+    hostname: nginx
+    volumes:
+      - ~/nginx/www/:/usr/share/nginx/html
