@@ -1,0 +1,29 @@
+# ####################################################################
+# ################### CONFIGURATION VARIABLES ########################
+# ####################################################################
+IMAGE_NAME = "ubuntu/bionic64"      # Image to use
+MEM = 1024                          # Amount of RAM
+CPU = 1                             # Number of processors
+
+NGINX_IP = "10.0.44.10"
+
+Vagrant.configure("2") do |config|
+  # RAM and CPU config
+  config.vm.provider "virtualbox" do |v|
+    v.memory = MEM
+    v.cpus = CPU
+  end
+
+  # nginx config
+  config.vm.define "nginx" do |nginx|
+    nginx.vm.box = IMAGE_NAME
+    nginx.vm.hostname = "nginx"
+    nginx.vm.network "private_network", ip: "#{NGINX_IP}"
+    nginx.vm.provision "ansible" do |ansible|
+    ansible.playbook = "playbook.yml"
+    ansible.extra_vars = {
+    domain: "shoru.local"
+    }
+    end
+  end
+end
