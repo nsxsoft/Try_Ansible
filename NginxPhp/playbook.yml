@@ -1,0 +1,57 @@
+---
+- name: Install Nginx server
+  gather_facts: no
+  hosts: nginx
+  become: true
+  tasks:
+    - name: "Install Nginx & php-fpm package"
+      apt:
+        name: "{{ item }}"
+        state: latest
+        update_cache: yes
+      with_items:
+        - nginx
+        - php-fpm
+
+    - name: "Create {{ domain }} directory"
+      file:
+        path: "/var/www/{{ domain }}/html"
+        state: directory
+        mode: 0755
+
+    - name: "Copy web content"
+      copy:
+        src: html/
+        dest: "/var/www/{{ domain }}/html"
+
+    - name: "Copy host config"
+      template:
+        src: "example.local.j2"
+        dest: "/etc/nginx/sites-available/{{ domain }}"
+
+    - name: "Create symbolic link"
+      file:
+        src: "/etc/nginx/sites-available/{{ domain }}"
+        dest: "/etc/nginx/sites-enabled/{{ domain }}"
+        owner: root 
+        group: root
+        state: link
+
+    - name: "Copy Nginx config"
+      copy:
+        src: nginx/
+        dest: /etc/nginx/
+
+    - name: "Reload Nginx and PHP service"
+      service:
+        name: "{{ item }}"
+        state: reloaded
+        enabled: yes
+      with_items:
+        - nginx
+        - php7.2-fpm
+
+    - name: "Add {{ domain }} to hosts file"
+      lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1 {{ domain }}"
